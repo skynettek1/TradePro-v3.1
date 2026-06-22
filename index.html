@@ -1,0 +1,1722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+  <title>SKY‑NET TEK · Trading Journal</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&family=JetBrains+Mono&family=Sora:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ----- RESET & VARIABLES ----- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    :root {
+      --bg: #050816;
+      --navy: #0A1024;
+      --card: #0D152E;
+      --border: #1A234A;
+      --electric: #00A8FF;
+      --cyan: #00E5FF;
+      --neon: #1E90FF;
+      --text: #FFFFFF;
+      --text-secondary: #A8B3CF;
+      --text-muted: #6C7894;
+      --profit: #00D26A;
+      --loss: #FF4D4F;
+      --warning: #FFA940;
+      --radius: 16px;
+      --shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+    h1, h2, h3, h4 {
+      font-family: 'Sora', sans-serif;
+      font-weight: 600;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+    }
+    .text-secondary { color: var(--text-secondary); }
+    .text-muted { color: var(--text-muted); }
+    .profit { color: var(--profit); }
+    .loss { color: var(--loss); }
+    .warning { color: var(--warning); }
+
+    /* ----- UTILITIES ----- */
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    .flex {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .flex-between {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+    .gap-8 { gap: 8px; }
+    .mt-12 { margin-top: 12px; }
+    .mb-8 { margin-bottom: 8px; }
+    .mb-16 { margin-bottom: 16px; }
+    .w-full { width: 100%; }
+    .text-center { text-align: center; }
+
+    /* ----- CARDS & KPI ----- */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+    .card-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+    }
+    .kpi-card .kpi-value {
+      font-size: 1.3rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .kpi-card .kpi-label {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ----- BADGES ----- */
+    .badge {
+      display: inline-block;
+      padding: 2px 12px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: var(--navy);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+    .badge-profit {
+      background: rgba(0,210,106,0.15);
+      color: var(--profit);
+      border-color: var(--profit);
+    }
+    .badge-loss {
+      background: rgba(255,77,79,0.15);
+      color: var(--loss);
+      border-color: var(--loss);
+    }
+    .badge-success {
+      background: rgba(0,210,106,0.2);
+      color: var(--profit);
+      border-color: var(--profit);
+    }
+    .badge-danger {
+      background: rgba(255,77,79,0.2);
+      color: var(--loss);
+      border-color: var(--loss);
+    }
+
+    /* ----- BUTTONS ----- */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: var(--navy);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+    .btn:hover {
+      background: var(--card);
+      border-color: var(--electric);
+    }
+    .btn-primary {
+      background: var(--electric);
+      border-color: var(--electric);
+      color: #000;
+    }
+    .btn-primary:hover {
+      background: var(--cyan);
+      border-color: var(--cyan);
+    }
+    .btn-danger {
+      border-color: var(--loss);
+      color: var(--loss);
+    }
+    .btn-danger:hover {
+      background: rgba(255,77,79,0.15);
+    }
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 0.8rem;
+    }
+    .btn-block {
+      width: 100%;
+      justify-content: center;
+    }
+
+    /* ----- TRADE ITEMS ----- */
+    .trade-item {
+      background: var(--navy);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      border-left: 3px solid var(--electric);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .trade-item .trade-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .trade-item .trade-info .pair { font-weight: 600; }
+    .trade-item .trade-info .meta {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+    .trade-item .trade-pnl {
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ----- BOTTOM NAV ----- */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: var(--navy);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0 env(safe-area-inset-bottom, 8px);
+      z-index: 1000;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .bottom-nav button {
+      background: none;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      padding: 4px 12px;
+      cursor: pointer;
+      transition: color 0.2s;
+      font-family: inherit;
+    }
+    .bottom-nav button .nav-icon {
+      font-size: 1.5rem;
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+    .bottom-nav button.active {
+      color: var(--electric);
+    }
+    .bottom-nav button.active .nav-icon {
+      filter: drop-shadow(0 0 6px var(--electric));
+    }
+
+    /* ----- PAGES ----- */
+    .page {
+      display: none;
+    }
+    .page.active {
+      display: block;
+    }
+
+    /* ----- MODALS ----- */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 2000;
+      overflow-y: auto;
+      padding: 20px;
+      align-items: flex-start;
+      justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      max-width: 600px;
+      width: 100%;
+      padding: 24px;
+      margin: 20px auto;
+      position: relative;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-box .modal-close {
+      position: sticky;
+      top: 0;
+      float: right;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    .modal-box .modal-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    /* ----- FORMS ----- */
+    input, select, textarea {
+      font-family: inherit;
+      font-size: 0.9rem;
+      background: var(--navy);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 10px;
+      width: 100%;
+      outline: none;
+      transition: border 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--electric);
+    }
+    textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ----- CALENDAR ----- */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      text-align: center;
+    }
+    .calendar-grid .day-name {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      padding: 6px 0;
+      font-weight: 600;
+    }
+    .calendar-grid .day-cell {
+      background: var(--navy);
+      border-radius: 8px;
+      aspect-ratio: 1/1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      position: relative;
+    }
+    .calendar-grid .day-cell:hover {
+      background: var(--card);
+    }
+    .calendar-grid .day-cell .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      margin-top: 2px;
+    }
+    .calendar-grid .day-cell .dot.profit { background: var(--profit); }
+    .calendar-grid .day-cell .dot.loss { background: var(--loss); }
+    .calendar-grid .day-cell.other-month { opacity: 0.3; }
+    .calendar-grid .day-cell.today {
+      border: 1px solid var(--electric);
+    }
+
+    /* ----- SCREENSHOT PREVIEW ----- */
+    .screenshot-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 8px 0;
+    }
+    .screenshot-grid .screenshot-box {
+      background: var(--navy);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      aspect-ratio: 4/3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      overflow: hidden;
+      position: relative;
+    }
+    .screenshot-grid .screenshot-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .screenshot-grid .screenshot-box .remove {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      background: rgba(0,0,0,0.7);
+      border: none;
+      color: #fff;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 0.7rem;
+      cursor: pointer;
+    }
+
+    /* ----- ANALYTICS: FIXED CHART HEIGHT ----- */
+    .chart-wrapper {
+      height: 180px;
+      position: relative;
+      width: 100%;
+    }
+    .chart-wrapper canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* ----- PROFILE PICTURE ----- */
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--navy);
+      border: 2px solid var(--border);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .avatar-preview {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--navy);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      flex-shrink: 0;
+    }
+    .avatar-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* ----- RESPONSIVE ----- */
+    @media (max-width: 480px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .bottom-nav button {
+        font-size: 0.55rem;
+        padding: 4px 8px;
+      }
+      .bottom-nav button .nav-icon {
+        font-size: 1.3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== APP ===== -->
+  <div id="app">
+
+    <!-- ========== DASHBOARD ========== -->
+    <div class="page active" id="page-dashboard">
+      <div class="container">
+        <div class="flex-between mb-16">
+          <div>
+            <div class="text-muted" style="font-size:0.75rem;">Welcome back,</div>
+            <h1 id="traderNameDisplay">Trader</h1>
+          </div>
+          <div style="text-align:right;">
+            <div class="text-muted" style="font-size:0.7rem;" id="currentDateDisplay"></div>
+            <div style="display:flex; align-items:center; gap:8px; margin-top:4px; justify-content:flex-end;">
+              <div class="avatar" id="headerProfilePic" onclick="openProfile()" style="cursor:pointer;">👤</div>
+              <button class="btn btn-sm" onclick="openAddTrade()">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-grid" id="kpiGrid">
+          <div class="kpi-card"><div class="kpi-label">Balance</div><div class="kpi-value" id="kpiBalance">$0</div></div>
+          <div class="kpi-card"><div class="kpi-label">P&L</div><div class="kpi-value" id="kpiPnL">$0</div></div>
+          <div class="kpi-card"><div class="kpi-label">Win Rate</div><div class="kpi-value" id="kpiWinRate">0%</div></div>
+          <div class="kpi-card"><div class="kpi-label">Profit Factor</div><div class="kpi-value" id="kpiProfitFactor">0.00</div></div>
+          <div class="kpi-card"><div class="kpi-label">Avg R</div><div class="kpi-value" id="kpiAvgR">0.00R</div></div>
+          <div class="kpi-card"><div class="kpi-label">Score</div><div class="kpi-value" id="kpiScore">0</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Equity Curve</div>
+          <div class="chart-wrapper"><canvas id="equityChart"></canvas></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Monthly Goal</div>
+          <div class="flex-between">
+            <span class="text-secondary">$<span id="goalProgressCurrent">0</span> / $<span id="goalProgressTarget">0</span></span>
+            <span class="mono" id="goalProgressPercent">0%</span>
+          </div>
+          <div style="height:6px; background:var(--navy); border-radius:10px; margin:8px 0; overflow:hidden;">
+            <div id="goalProgressBar" style="width:0%; height:100%; background:var(--electric); border-radius:10px; transition:width 0.3s;"></div>
+          </div>
+          <div class="flex-between">
+            <div>
+              <span class="text-muted" style="font-size:0.8rem;">R Goal: <span id="rGoalDisplay">0R</span></span>
+              <span class="text-muted" style="font-size:0.8rem; margin-left:12px;">Earned: <span id="rEarnedDisplay">0R</span></span>
+            </div>
+            <span id="goalStatusBadge" class="badge">⏳ Set a goal</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="flex-between">
+            <div class="card-title" style="margin:0;">Recent Trades</div>
+            <button class="btn btn-sm" onclick="switchPage('trades')">View All</button>
+          </div>
+          <div id="recentTradesList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== TRADES ========== -->
+    <div class="page" id="page-trades">
+      <div class="container">
+        <div class="flex-between mb-16">
+          <h1>Trades</h1>
+          <button class="btn btn-primary btn-sm" onclick="openAddTrade()">+ New</button>
+        </div>
+        <div class="flex gap-8" style="flex-wrap:wrap; margin-bottom:12px;">
+          <input type="text" id="tradeSearch" placeholder="Search..." style="flex:1; min-width:100px;" oninput="renderTradeList()" />
+          <select id="filterAsset" onchange="renderTradeList()" style="flex:1; min-width:80px;">
+            <option value="all">All Assets</option>
+            <option value="forex">Forex</option>
+            <option value="crypto">Crypto</option>
+            <option value="commodity">Commodities</option>
+            <option value="index">Indices</option>
+            <option value="futures">Futures</option>
+            <option value="synthetic">Synthetic</option>
+            <option value="stock">Stocks</option>
+          </select>
+          <select id="filterResult" onchange="renderTradeList()" style="flex:1; min-width:80px;">
+            <option value="all">All Results</option>
+            <option value="win">Wins</option>
+            <option value="loss">Losses</option>
+          </select>
+        </div>
+        <div id="tradeListContainer"></div>
+      </div>
+    </div>
+
+    <!-- ========== CALENDAR ========== -->
+    <div class="page" id="page-calendar">
+      <div class="container">
+        <h1 class="mb-16">Calendar</h1>
+        <div class="card">
+          <div class="flex-between mb-8">
+            <button class="btn btn-sm" onclick="changeMonth(-1)">◀</button>
+            <span style="font-size:1.2rem; font-weight:700;" id="calendarMonthYear"></span>
+            <button class="btn btn-sm" onclick="changeMonth(1)">▶</button>
+          </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+          <div style="margin-top:16px;" id="calendarDayDetail">
+            <span class="text-muted">Select a date to see trades</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== ANALYTICS ========== -->
+    <div class="page" id="page-analytics">
+      <div class="container">
+        <h1 class="mb-16">Analytics</h1>
+        <div class="card">
+          <div class="card-title">Performance by Asset</div>
+          <div class="chart-wrapper"><canvas id="assetChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Setup Performance</div>
+          <div class="chart-wrapper"><canvas id="setupChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Grade Analytics</div>
+          <div id="gradeStats" class="grid-2"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Session P&L</div>
+          <div class="chart-wrapper"><canvas id="sessionChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Psychology Summary</div>
+          <div id="psychSummary" class="text-muted" style="font-size:0.9rem;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== MORE ========== -->
+    <div class="page" id="page-more">
+      <div class="container">
+        <h1 class="mb-16">More</h1>
+        <div class="card">
+          <button class="btn btn-block" onclick="openPsychology()">🧠 Psychology Journal</button>
+          <button class="btn btn-block mt-12" onclick="openGoals()">🎯 Goals</button>
+          <button class="btn btn-block mt-12" onclick="openProfile()">👤 Profile</button>
+          <button class="btn btn-block mt-12" onclick="openSettings()">⚙ Settings</button>
+          <button class="btn btn-block mt-12" onclick="exportData()">📥 Export Data</button>
+          <button class="btn btn-block mt-12" onclick="importData()">📤 Import Data</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== BOTTOM NAV ===== -->
+    <nav class="bottom-nav">
+      <button class="active" data-page="dashboard"><span class="nav-icon">🏠</span> Dashboard</button>
+      <button data-page="trades"><span class="nav-icon">📒</span> Trades</button>
+      <button data-page="calendar"><span class="nav-icon">📅</span> Calendar</button>
+      <button data-page="analytics"><span class="nav-icon">📊</span> Analytics</button>
+      <button data-page="more"><span class="nav-icon">⚙</span> More</button>
+    </nav>
+
+    <!-- ============================================================ -->
+    <!-- MODALS -->
+    <!-- ============================================================ -->
+
+    <!-- TRADE MODAL with PSYCHOLOGY INTEGRATED -->
+    <div class="modal-overlay" id="tradeModal">
+      <div class="modal-box">
+        <button class="modal-close" onclick="closeModal('tradeModal')">✕</button>
+        <div class="modal-title" id="tradeModalTitle">New Trade</div>
+        <form id="tradeForm" onsubmit="saveTrade(event)">
+          <input type="hidden" id="editIndex" value="-1" />
+
+          <!-- Date & Time now properly used -->
+          <div class="form-group">
+            <label>Date & Time</label>
+            <input type="datetime-local" id="tradeDate" required />
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group"><label>Asset Class</label>
+              <select id="assetClass" required>
+                <option value="forex">Forex</option><option value="crypto">Crypto</option>
+                <option value="commodity">Commodities</option><option value="index">Indices</option>
+                <option value="futures">Futures</option><option value="synthetic">Synthetic</option>
+                <option value="stock">Stocks</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Instrument</label><input type="text" id="instrument" placeholder="e.g. XAUUSD" required /></div>
+          </div>
+          <div class="grid-2">
+            <div class="form-group"><label>Direction</label><select id="direction"><option value="long">Long</option><option value="short">Short</option></select></div>
+            <div class="form-group"><label>Position Size (lots)</label><input type="number" id="positionSize" step="0.01" value="1.00" required /></div>
+          </div>
+          <div class="grid-2">
+            <div class="form-group"><label>Entry Price</label><input type="number" id="entryPrice" step="any" required /></div>
+            <div class="form-group"><label>Exit Price</label><input type="number" id="exitPrice" step="any" required /></div>
+          </div>
+          <div class="grid-2">
+            <div class="form-group"><label>Stop Loss</label><input type="number" id="stopLoss" step="any" /></div>
+            <div class="form-group"><label>Take Profit</label><input type="number" id="takeProfit" step="any" /></div>
+          </div>
+          <div class="grid-2">
+            <div class="form-group"><label>Risk %</label><input type="number" id="riskPercent" step="0.1" value="1.0" /></div>
+            <div class="form-group"><label>Strategy</label><input type="text" id="strategy" placeholder="e.g. Breakout" /></div>
+          </div>
+          <div class="form-group">
+            <label>Setup</label>
+            <select id="setup">
+              <option value="Liquidity Sweep">Liquidity Sweep</option><option value="Liquidity Grab">Liquidity Grab</option>
+              <option value="FVG">FVG</option><option value="IFVG">IFVG</option><option value="Order Block">Order Block</option>
+              <option value="Breaker Block">Breaker Block</option><option value="Mitigation Block">Mitigation Block</option>
+              <option value="BOS">BOS</option><option value="CHOCH">CHOCH</option><option value="Premium Discount">Premium Discount</option>
+              <option value="SMT Divergence">SMT Divergence</option><option value="Judas Swing">Judas Swing</option>
+              <option value="Silver Bullet">Silver Bullet</option><option value="Power of 3">Power of 3</option><option value="OTE">OTE</option>
+              <option value="Kill Zone">Kill Zone</option><option value="MSS">MSS</option><option value="Breakout">Breakout</option>
+              <option value="Retest">Retest</option><option value="Trend Continuation">Trend Continuation</option><option value="Pullback">Pullback</option>
+              <option value="Reversal">Reversal</option><option value="Range">Range</option><option value="Support Resistance">Support Resistance</option>
+              <option value="Supply Demand">Supply Demand</option><option value="Pin Bar">Pin Bar</option><option value="Engulfing">Engulfing</option>
+              <option value="Inside Bar">Inside Bar</option><option value="Double Top">Double Top</option><option value="Double Bottom">Double Bottom</option>
+              <option value="Head and Shoulders">Head and Shoulders</option><option value="Scalping">Scalping</option>
+              <option value="VWAP Bounce">VWAP Bounce</option><option value="Momentum Breakout">Momentum Breakout</option>
+              <option value="Opening Range Breakout">Opening Range Breakout</option><option value="Custom">Custom</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Custom Setup</label><input type="text" id="customSetup" placeholder="If Custom selected" /></div>
+          <div class="grid-2">
+            <div class="form-group"><label>Setup Grade</label><select id="setupGrade"><option value="A+">A+</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></div>
+            <div class="form-group"><label>Execution Grade</label><select id="executionGrade"><option value="A+">A+</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></div>
+          </div>
+          <div class="form-group"><label>Was this trade in your trading plan?</label><select id="planCompliance"><option value="Yes">Yes</option><option value="No">No</option></select></div>
+          <div class="form-group"><label>Rule Violations (hold Ctrl/Cmd to multi-select)</label>
+            <select id="ruleViolations" multiple style="height:60px;">
+              <option value="Exceeded Risk">Exceeded Risk</option><option value="Traded Outside Session">Traded Outside Session</option>
+              <option value="Unapproved Strategy">Unapproved Strategy</option><option value="Revenge Trade">Revenge Trade</option>
+              <option value="FOMO Entry">FOMO Entry</option><option value="Early Exit">Early Exit</option><option value="Late Entry">Late Entry</option>
+            </select>
+          </div>
+          <div class="grid-2">
+            <div class="form-group"><label>Session</label><select id="session"><option value="Asian">Asian</option><option value="London">London</option><option value="New York">New York</option><option value="London/New York Overlap">London/New York Overlap</option></select></div>
+            <div class="form-group"><label>Tags</label><input type="text" id="tags" placeholder="comma separated" /></div>
+          </div>
+          <div class="form-group"><label>Notes</label><textarea id="notes" rows="2"></textarea></div>
+
+          <!-- ===== PSYCHOLOGY SECTION ===== -->
+          <div style="background:var(--navy); border-radius:12px; padding:14px; margin:12px 0; border:1px solid var(--border);">
+            <div style="font-size:0.75rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">🧠 Trading Psychology</div>
+            <div class="grid-2">
+              <div class="form-group"><label>Emotion Before Trade</label>
+                <select id="emotionBefore">
+                  <option value="">Select…</option>
+                  <option value="Confident">😎 Confident</option>
+                  <option value="Anxious">😰 Anxious</option>
+                  <option value="Excited">🤩 Excited</option>
+                  <option value="Fearful">😨 Fearful</option>
+                  <option value="Calm">😌 Calm</option>
+                  <option value="Revenge">😤 Revenge</option>
+                  <option value="Greedy">🤑 Greedy</option>
+                  <option value="FOMO">😱 FOMO</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Emotion During Trade</label>
+                <select id="emotionDuring">
+                  <option value="">Select…</option>
+                  <option value="Confident">😎 Confident</option>
+                  <option value="Anxious">😰 Anxious</option>
+                  <option value="Excited">🤩 Excited</option>
+                  <option value="Fearful">😨 Fearful</option>
+                  <option value="Calm">😌 Calm</option>
+                  <option value="Panic">😵 Panic</option>
+                  <option value="Impatient">⏰ Impatient</option>
+                </select>
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="form-group"><label>Emotion After Trade</label>
+                <select id="emotionAfter">
+                  <option value="">Select…</option>
+                  <option value="Happy">😊 Happy</option>
+                  <option value="Regretful">😞 Regretful</option>
+                  <option value="Relieved">😮‍💨 Relieved</option>
+                  <option value="Angry">😡 Angry</option>
+                  <option value="Satisfied">😌 Satisfied</option>
+                  <option value="Disappointed">😔 Disappointed</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Discipline (1-10)</label>
+                <input type="number" id="tradeDiscipline" min="1" max="10" value="7" />
+              </div>
+            </div>
+          </div>
+
+          <!-- MANUAL P&L OVERRIDE -->
+          <div class="form-group">
+            <label>Final P&L (Manual Override) – for non-USD pairs or corrections</label>
+            <input type="number" id="manualPnL" step="any" placeholder="Leave empty to auto-calculate" />
+          </div>
+
+          <!-- SCREENSHOTS -->
+          <div class="form-group">
+            <label>Screenshots (Before, During, After)</label>
+            <div class="screenshot-grid" id="screenshotGrid">
+              <div class="screenshot-box" id="screenshotBeforeBox" onclick="document.getElementById('screenshotBeforeInput').click()">
+                <span>📷 Before</span>
+                <input type="file" id="screenshotBeforeInput" accept="image/*" style="display:none;" onchange="previewScreenshot('before', this)" />
+                <img id="screenshotBeforePreview" style="display:none; width:100%; height:100%; object-fit:cover;" />
+                <button class="remove" id="screenshotBeforeRemove" style="display:none;" onclick="removeScreenshot('before'); event.stopPropagation();">✕</button>
+              </div>
+              <div class="screenshot-box" id="screenshotDuringBox" onclick="document.getElementById('screenshotDuringInput').click()">
+                <span>📷 During</span>
+                <input type="file" id="screenshotDuringInput" accept="image/*" style="display:none;" onchange="previewScreenshot('during', this)" />
+                <img id="screenshotDuringPreview" style="display:none; width:100%; height:100%; object-fit:cover;" />
+                <button class="remove" id="screenshotDuringRemove" style="display:none;" onclick="removeScreenshot('during'); event.stopPropagation();">✕</button>
+              </div>
+              <div class="screenshot-box" id="screenshotAfterBox" onclick="document.getElementById('screenshotAfterInput').click()">
+                <span>📷 After</span>
+                <input type="file" id="screenshotAfterInput" accept="image/*" style="display:none;" onchange="previewScreenshot('after', this)" />
+                <img id="screenshotAfterPreview" style="display:none; width:100%; height:100%; object-fit:cover;" />
+                <button class="remove" id="screenshotAfterRemove" style="display:none;" onclick="removeScreenshot('after'); event.stopPropagation();">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Save Trade</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- DAY DETAIL MODAL -->
+    <div class="modal-overlay" id="dayDetailModal">
+      <div class="modal-box">
+        <button class="modal-close" onclick="closeModal('dayDetailModal')">✕</button>
+        <div class="modal-title" id="dayDetailTitle">Trades for Date</div>
+        <div id="dayDetailContent"></div>
+      </div>
+    </div>
+
+    <!-- PSYCHOLOGY JOURNAL -->
+    <div class="modal-overlay" id="psychologyModal">
+      <div class="modal-box">
+        <button class="modal-close" onclick="closeModal('psychologyModal')">✕</button>
+        <div class="modal-title">Daily Psychology Journal</div>
+        <form id="psychologyForm" onsubmit="savePsychology(event)">
+          <div class="grid-2">
+            <div class="form-group"><label>Mood (1-10)</label><input type="number" id="mood" min="1" max="10" value="5" /></div>
+            <div class="form-group"><label>Confidence (1-10)</label><input type="number" id="confidence" min="1" max="10" value="5" /></div>
+            <div class="form-group"><label>Discipline (1-10)</label><input type="number" id="disciplinePsych" min="1" max="10" value="5" /></div>
+            <div class="form-group"><label>Focus (1-10)</label><input type="number" id="focus" min="1" max="10" value="5" /></div>
+            <div class="form-group"><label>Patience (1-10)</label><input type="number" id="patience" min="1" max="10" value="5" /></div>
+          </div>
+          <div class="form-group"><label>Notes</label><textarea id="psychNotes" rows="3"></textarea></div>
+          <button type="submit" class="btn btn-primary btn-block">Save Entry</button>
+        </form>
+        <div id="psychologyEntries" class="mt-12"></div>
+      </div>
+    </div>
+
+    <!-- GOALS MODAL -->
+    <div class="modal-overlay" id="goalsModal">
+      <div class="modal-box">
+        <button class="modal-close" onclick="closeModal('goalsModal')">✕</button>
+        <div class="modal-title">Goals</div>
+        <form id="goalsForm" onsubmit="saveGoals(event)">
+          <div class="form-group"><label>Monthly Profit Goal ($)</label><input type="number" id="goalProfit" step="10" /></div>
+          <div class="form-group"><label>Monthly R Goal</label><input type="number" id="goalR" step="0.5" /></div>
+          <div class="form-group"><label>Max Drawdown %</label><input type="number" id="goalDrawdown" step="0.5" /></div>
+          <div class="form-group"><label>Max Daily Loss ($)</label><input type="number" id="goalDailyLoss" step="10" /></div>
+          <div class="form-group"><label>Trade Frequency Goal (per month)</label><input type="number" id="goalFrequency" step="1" /></div>
+          <button type="submit" class="btn btn-primary btn-block">Save Goals</button>
+        </form>
+        <div id="goalProgressDisplay" class="mt-12"></div>
+      </div>
+    </div>
+
+    <!-- PROFILE MODAL -->
+    <div class="modal-overlay" id="profileModal">
+      <div class="modal-box">
+        <button class="modal-close" onclick="closeModal('profileModal')">✕</button>
+        <div class="modal-title">Profile</div>
+        <form id="profileForm" onsubmit="saveProfile(event)">
+          <div class="form-group">
+            <label>Profile Picture</label>
+            <div style="display:flex; align-items:center; gap:16px; margin-top:4px;">
+              <div class="avatar-preview" id="profilePicPreview">👤</div>
+              <div style="flex:1;">
+                <input type="file" id="profilePicInput" accept="image/*" style="padding:4px;" onchange="previewProfilePic(event)" />
+                <div style="font-size:0.7rem; color:var(--text-muted); margin-top:4px;">Max 200KB, PNG/JPG</div>
+              </div>
+            </div>
+          </div>
+          <div class="form-group"><label>Trader Name</label><input type="text" id="profileName" required /></div>
+          <div class="form-group"><label>Username</label><input type="text" id="profileUsername" /></div>
+          <div class="form-group"><label>Email</label><input type="email" id="profileEmail" /></div>
+          <div class="form-group"><label>Experience Level</label>
+            <select id="profileExperience"><option value="Beginner">Beginner</option><option value="Intermediate">Intermediate</option><option value="Advanced">Advanced</option><option value="Professional">Professional</option></select>
+          </div>
+          <div class="form-group"><label>Timezone</label><input type="text" id="profileTimezone" placeholder="e.g. UTC-5" /></div>
+          <div class="form-group"><label>Account Currency</label><input type="text" id="profileCurrency" value="USD" /></div>
+          <div class="form-group"><label>Preferred Market</label><input type="text" id="profileMarket" placeholder="e.g. Forex" /></div>
+          <div class="form-group"><label>Default Risk %</label><input type="number" id="profileDefaultRisk" step="0.1" value="1.0" /></div>
+          <div class="form-group"><label>Starting Balance ($)</label><input type="number" id="profileBalance" step="10" value="0" /></div>
+          <button type="submit" class="btn btn-primary btn-block">Save Profile</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div class="modal-overlay" id="settingsModal">
+      <div class="modal-box">
+        <button class="modal-close" onclick="closeModal('settingsModal')">✕</button>
+        <div class="modal-title">Settings</div>
+        <div class="card"><button class="btn btn-block btn-danger" onclick="if(confirm('Delete ALL data?')){localStorage.clear();location.reload();}">Reset All Data</button></div>
+        <div class="card"><button class="btn btn-block" onclick="exportData()">Export JSON Backup</button></div>
+        <div class="card"><button class="btn btn-block" onclick="importData()">Import JSON Backup</button></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- JAVASCRIPT -->
+  <!-- ============================================================ -->
+  <script>
+    // ================================================================
+    // DATA LAYER
+    // ================================================================
+    const STORAGE_KEYS = {
+      trades: 'skynet_teks_trades_v5',
+      profile: 'skynet_teks_profile_v5',
+      goals: 'skynet_teks_goals_v5',
+      psychology: 'skynet_teks_psychology_v5',
+    };
+
+    function getTrades() { return JSON.parse(localStorage.getItem(STORAGE_KEYS.trades) || '[]'); }
+    function setTrades(t) { localStorage.setItem(STORAGE_KEYS.trades, JSON.stringify(t)); }
+    function getProfile() { return JSON.parse(localStorage.getItem(STORAGE_KEYS.profile) || '{}'); }
+    function setProfile(p) { localStorage.setItem(STORAGE_KEYS.profile, JSON.stringify(p)); }
+    function getGoals() { return JSON.parse(localStorage.getItem(STORAGE_KEYS.goals) || '{}'); }
+    function setGoals(g) { localStorage.setItem(STORAGE_KEYS.goals, JSON.stringify(g)); }
+    function getPsychology() { return JSON.parse(localStorage.getItem(STORAGE_KEYS.psychology) || '[]'); }
+    function setPsychology(p) { localStorage.setItem(STORAGE_KEYS.psychology, JSON.stringify(p)); }
+
+    // ================================================================
+    // HELPERS
+    // ================================================================
+    function today() { return new Date().toISOString().slice(0, 10); }
+    function formatDate(d) { return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+    function formatDateShort(d) { return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+    function formatCurrency(v) { return (v >= 0 ? '+' : '') + '$' + v.toFixed(2); }
+    function round2(v) { return Math.round(v * 100) / 100; }
+
+    // ================================================================
+    // P&L with CONTRACT SIZE & MANUAL OVERRIDE
+    // ================================================================
+    function getContractSize(trade) {
+      const asset = trade.assetClass || 'forex';
+      const pair = (trade.instrument || '').toUpperCase();
+      switch (asset) {
+        case 'forex': return 100000;
+        case 'crypto': return 1;
+        case 'index': return 1;
+        case 'synthetic': return 1;
+        case 'futures': return 1;
+        case 'stock': return 1;
+        case 'commodity':
+          if (pair.includes('XAU') || pair.includes('GOLD')) return 100;
+          if (pair.includes('XAG')) return 5000;
+          if (pair.includes('WTI') || pair.includes('BRENT')) return 1000;
+          return 100;
+        default: return 1;
+      }
+    }
+
+    function getPnL(trade) {
+      if (trade.manualPnL !== undefined && trade.manualPnL !== null && !isNaN(trade.manualPnL)) return trade.manualPnL;
+      const dir = trade.direction === 'long' ? 1 : -1;
+      const priceDiff = (trade.exitPrice - trade.entryPrice) * dir;
+      const contractSize = getContractSize(trade);
+      return priceDiff * trade.positionSize * contractSize;
+    }
+
+    function getR(trade) {
+      if (!trade.stopLoss || trade.stopLoss === 0) return 0;
+      const risk = Math.abs(trade.entryPrice - trade.stopLoss);
+      const reward = Math.abs(trade.exitPrice - trade.entryPrice);
+      if (risk === 0) return 0;
+      return (reward / risk) * (trade.direction === 'long' ? 1 : 1);
+    }
+
+    function getMonthlyREarned(trades) {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthlyTrades = trades.filter(t => new Date(t.date) >= monthStart);
+      return monthlyTrades.reduce((sum, t) => sum + getR(t), 0);
+    }
+
+    function calculateStats(trades) {
+      if (!trades.length) return { totalPnL: 0, winRate: 0, profitFactor: 0, avgR: 0, wins: 0, losses: 0 };
+      let totalPnL = 0, wins = 0, losses = 0, totalR = 0;
+      let grossProfit = 0, grossLoss = 0;
+      trades.forEach(t => {
+        const pnl = getPnL(t);
+        totalPnL += pnl;
+        const r = getR(t);
+        totalR += r;
+        if (pnl > 0) { wins++; grossProfit += pnl; } else if (pnl < 0) { losses++; grossLoss += Math.abs(pnl); }
+      });
+      const winRate = trades.length ? (wins / trades.length * 100) : 0;
+      const profitFactor = grossLoss === 0 ? (grossProfit > 0 ? Infinity : 0) : grossProfit / grossLoss;
+      const avgR = trades.length ? totalR / trades.length : 0;
+      return { totalPnL, winRate, profitFactor, avgR, wins, losses };
+    }
+
+    // ================================================================
+    // RENDER: DASHBOARD
+    // ================================================================
+    function renderDashboard() {
+      document.getElementById('currentDateDisplay').innerText = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      const profile = getProfile();
+      document.getElementById('traderNameDisplay').innerText = profile.name || 'Trader';
+
+      const avatarEl = document.getElementById('headerProfilePic');
+      if (profile.picture && profile.picture.startsWith('data:image')) {
+        avatarEl.innerHTML = `<img src="${profile.picture}" alt="Profile" style="width:100%;height:100%;object-fit:cover;" />`;
+      } else {
+        avatarEl.innerHTML = '👤';
+      }
+
+      updateKPI();
+      renderRecentTrades();
+      renderEquityChart();
+      renderGoalsProgress();
+    }
+
+    function updateKPI() {
+      const trades = getTrades();
+      const stats = calculateStats(trades);
+      const profile = getProfile();
+      const balance = profile.balance || 0;
+      const equity = balance + stats.totalPnL;
+      document.getElementById('kpiBalance').innerText = '$' + equity.toFixed(2);
+      document.getElementById('kpiPnL').innerText = formatCurrency(stats.totalPnL);
+      document.getElementById('kpiWinRate').innerText = stats.winRate.toFixed(1) + '%';
+      document.getElementById('kpiProfitFactor').innerText = stats.profitFactor === Infinity ? '∞' : stats.profitFactor.toFixed(2);
+      document.getElementById('kpiAvgR').innerText = stats.avgR.toFixed(2) + 'R';
+      document.getElementById('kpiScore').innerText = calculateTraderScore();
+    }
+
+    function calculateTraderScore() {
+      const trades = getTrades();
+      const stats = calculateStats(trades);
+      const goals = getGoals();
+      let score = 0;
+      const winRateScore = Math.min(stats.winRate / 100 * 30, 30);
+      const avgRScore = Math.min((stats.avgR + 2) * 10, 30);
+      const disciplineScore = 20;
+      let goalScore = 20;
+      const profitGoal = goals.profitGoal || 0;
+      if (profitGoal > 0) {
+        const achieved = Math.min(stats.totalPnL / profitGoal, 1);
+        goalScore = achieved * 20;
+      }
+      score = winRateScore + avgRScore + disciplineScore + goalScore;
+      return Math.min(Math.max(Math.round(score), 0), 100);
+    }
+
+    function renderRecentTrades() {
+      const trades = getTrades().slice(0, 5);
+      const container = document.getElementById('recentTradesList');
+      if (!trades.length) {
+        container.innerHTML = '<div class="text-muted" style="padding:12px 0;">No trades recorded yet.</div>';
+        return;
+      }
+      container.innerHTML = trades.map(t => {
+        const pnl = getPnL(t);
+        return `
+          <div class="trade-item" style="border-left-color:${pnl>=0?'var(--profit)':'var(--loss)'};">
+            <div class="trade-info">
+              <div class="pair">${t.instrument} <span class="text-muted" style="font-size:0.7rem;">${t.direction}</span></div>
+              <div class="meta">${formatDate(t.date)} · ${t.setup || 'N/A'}</div>
+            </div>
+            <div class="trade-pnl ${pnl>=0?'profit':'loss'}">${formatCurrency(pnl)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    let equityChartInstance = null;
+
+    function renderEquityChart() {
+      const trades = getTrades();
+      const sorted = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date));
+      const balance = (getProfile().balance || 0);
+      let equity = balance;
+      const labels = ['Start'];
+      const data = [equity];
+      sorted.forEach(t => {
+        equity += getPnL(t);
+        labels.push(formatDate(t.date));
+        data.push(equity);
+      });
+      const ctx = document.getElementById('equityChart').getContext('2d');
+      if (equityChartInstance) equityChartInstance.destroy();
+      equityChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets: [{ data, borderColor: '#00A8FF', backgroundColor: 'rgba(0,168,255,0.05)', fill: true, tension: 0.3, pointRadius: 2, pointBackgroundColor: '#00E5FF' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#A8B3CF' } }, x: { grid: { display: false }, ticks: { color: '#A8B3CF', maxTicksLimit: 8 } } } }
+      });
+    }
+
+    // ================================================================
+    // GOALS (with R Goal)
+    // ================================================================
+    function renderGoalsProgress() {
+      const goals = getGoals();
+      const trades = getTrades();
+      const stats = calculateStats(trades);
+      const profitGoal = goals.profitGoal || 0;
+      const currentProfit = stats.totalPnL;
+      const percent = profitGoal > 0 ? Math.min((currentProfit / profitGoal) * 100, 100) : 0;
+      document.getElementById('goalProgressCurrent').innerText = currentProfit.toFixed(2);
+      document.getElementById('goalProgressTarget').innerText = profitGoal.toFixed(2);
+      document.getElementById('goalProgressPercent').innerText = percent.toFixed(0) + '%';
+      document.getElementById('goalProgressBar').style.width = percent + '%';
+
+      const rGoal = goals.rGoal || 0;
+      const rEarned = getMonthlyREarned(trades);
+      document.getElementById('rGoalDisplay').innerText = rGoal + 'R';
+      document.getElementById('rEarnedDisplay').innerText = rEarned.toFixed(1) + 'R';
+
+      const statusEl = document.getElementById('goalStatusBadge');
+      if (profitGoal === 0 && rGoal === 0) {
+        statusEl.innerText = '⏳ Set a goal';
+        statusEl.className = 'badge';
+      } else if (currentProfit >= profitGoal) {
+        statusEl.innerText = '✅ Achieved';
+        statusEl.className = 'badge badge-success';
+      } else {
+        statusEl.innerText = '❌ Not Achieved';
+        statusEl.className = 'badge badge-danger';
+      }
+    }
+
+    // ================================================================
+    // TRADES LIST
+    // ================================================================
+    function renderTradeList() {
+      let trades = getTrades();
+      const search = document.getElementById('tradeSearch').value.toLowerCase();
+      const assetFilter = document.getElementById('filterAsset').value;
+      const resultFilter = document.getElementById('filterResult').value;
+      let filtered = trades.filter(t => {
+        const matchSearch = t.instrument.toLowerCase().includes(search) || (t.tags || '').toLowerCase().includes(search) || (t.strategy || '').toLowerCase().includes(search);
+        const matchAsset = assetFilter === 'all' || t.assetClass === assetFilter;
+        const pnl = getPnL(t);
+        const matchResult = resultFilter === 'all' || (resultFilter === 'win' && pnl > 0) || (resultFilter === 'loss' && pnl < 0);
+        return matchSearch && matchAsset && matchResult;
+      });
+      filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+      const container = document.getElementById('tradeListContainer');
+      if (!filtered.length) {
+        container.innerHTML = '<div class="text-muted" style="padding:20px; text-align:center;">No trades match.</div>';
+        return;
+      }
+      container.innerHTML = filtered.map((t) => {
+        const pnl = getPnL(t);
+        const r = getR(t);
+        const origIdx = trades.indexOf(t);
+        return `
+          <div class="trade-item" style="border-left-color:${pnl>=0?'var(--profit)':'var(--loss)'};">
+            <div class="trade-info">
+              <div class="pair">${t.instrument} <span class="text-muted" style="font-size:0.7rem;">${t.direction}</span></div>
+              <div class="meta">${formatDate(t.date)} · ${t.setup || 'N/A'} · ${t.strategy || ''}</div>
+              <div class="meta" style="font-size:0.65rem;">R: ${r.toFixed(2)}R | Grade: ${t.setupGrade||'N/A'}/${t.executionGrade||'N/A'}</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="trade-pnl ${pnl>=0?'profit':'loss'}">${formatCurrency(pnl)}</div>
+              <div style="display:flex; gap:4px; margin-top:4px;">
+                <button class="btn btn-sm" onclick="editTrade(${origIdx})">✎</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteTrade(${origIdx})">✕</button>
+                <button class="btn btn-sm" onclick="duplicateTrade(${origIdx})">📋</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ================================================================
+    // CALENDAR (local date handling)
+    // ================================================================
+    let calendarDate = new Date();
+
+    function localDateStr(date) {
+      return new Date(date).toLocaleDateString('en-CA');
+    }
+
+    function renderCalendar() {
+      const year = calendarDate.getFullYear();
+      const month = calendarDate.getMonth();
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const todayLocal = localDateStr(new Date());
+
+      document.getElementById('calendarMonthYear').innerText = new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+      const trades = getTrades();
+      let grid = document.getElementById('calendarGrid');
+      let html = '';
+      ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(d => { html += `<div class="day-name">${d}</div>`; });
+
+      for (let i = 0; i < firstDay; i++) { html += `<div class="day-cell other-month"></div>`; }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateObj = new Date(year, month, d);
+        const dateStr = localDateStr(dateObj);
+        const isToday = dateStr === todayLocal;
+        const dayTrades = trades.filter(t => localDateStr(t.date) === dateStr);
+        const dayPnL = dayTrades.reduce((s, t) => s + getPnL(t), 0);
+        const hasTrades = dayTrades.length > 0;
+        let dotClass = '';
+        if (hasTrades) dotClass = dayPnL >= 0 ? 'profit' : 'loss';
+        html += `
+          <div class="day-cell ${isToday?'today':''}" onclick="showDayDetail('${dateStr}')">
+            ${d}
+            ${hasTrades ? `<div class="dot ${dotClass}"></div>` : ''}
+          </div>
+        `;
+      }
+      grid.innerHTML = html;
+    }
+
+    function changeMonth(delta) {
+      calendarDate.setMonth(calendarDate.getMonth() + delta);
+      renderCalendar();
+    }
+
+    function showDayDetail(dateStr) {
+      const trades = getTrades().filter(t => localDateStr(t.date) === dateStr);
+      const displayDate = new Date(dateStr + 'T00:00:00');
+      document.getElementById('dayDetailTitle').innerText = 'Trades for ' + displayDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+      const container = document.getElementById('dayDetailContent');
+      if (!trades.length) {
+        container.innerHTML = '<div class="text-muted" style="padding:12px; text-align:center;">No trades on this date.</div>';
+        return;
+      }
+      container.innerHTML = trades.map(t => {
+        const pnl = getPnL(t);
+        const r = getR(t);
+        return `
+          <div class="trade-item" style="border-left-color:${pnl>=0?'var(--profit)':'var(--loss)'};">
+            <div class="trade-info">
+              <div class="pair">${t.instrument} <span class="text-muted" style="font-size:0.7rem;">${t.direction}</span></div>
+              <div class="meta">${t.setup || 'N/A'} · R: ${r.toFixed(2)}R</div>
+            </div>
+            <div class="trade-pnl ${pnl>=0?'profit':'loss'}">${formatCurrency(pnl)}</div>
+          </div>
+        `;
+      }).join('');
+      openModal('dayDetailModal');
+    }
+
+    // ================================================================
+    // ANALYTICS
+    // ================================================================
+    let assetChartInstance, setupChartInstance, sessionChartInstance;
+
+    function renderAnalytics() {
+      const trades = getTrades();
+
+      // Asset performance
+      let assetMap = {};
+      trades.forEach(t => { const a = t.assetClass || 'unknown'; if (!assetMap[a]) assetMap[a] = 0; assetMap[a] += getPnL(t); });
+      const labels = Object.keys(assetMap);
+      const data = Object.values(assetMap);
+      const ctx = document.getElementById('assetChart').getContext('2d');
+      if (assetChartInstance) assetChartInstance.destroy();
+      assetChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ data, backgroundColor: data.map(v => v >= 0 ? '#00D26A' : '#FF4D4F') }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#A8B3CF' } }, x: { ticks: { color: '#A8B3CF' } } } }
+      });
+
+      // Setup performance
+      let setupMap = {};
+      trades.forEach(t => { const s = t.setup || 'Unknown'; if (!setupMap[s]) setupMap[s] = 0; setupMap[s] += getPnL(t); });
+      const setupLabels = Object.keys(setupMap);
+      const setupData = Object.values(setupMap);
+      const ctx2 = document.getElementById('setupChart').getContext('2d');
+      if (setupChartInstance) setupChartInstance.destroy();
+      setupChartInstance = new Chart(ctx2, {
+        type: 'bar',
+        data: { labels: setupLabels, datasets: [{ data: setupData, backgroundColor: '#00A8FF' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#A8B3CF' } }, x: { ticks: { color: '#A8B3CF', maxRotation: 30 } } } }
+      });
+
+      // Session P&L
+      let sessionMap = { 'Asian': 0, 'London': 0, 'New York': 0, 'London/New York Overlap': 0 };
+      trades.forEach(t => { const s = t.session || 'London'; if (sessionMap[s] !== undefined) sessionMap[s] += getPnL(t); });
+      const sessLabels = Object.keys(sessionMap);
+      const sessData = Object.values(sessionMap);
+      const ctx3 = document.getElementById('sessionChart').getContext('2d');
+      if (sessionChartInstance) sessionChartInstance.destroy();
+      sessionChartInstance = new Chart(ctx3, {
+        type: 'bar',
+        data: { labels: sessLabels, datasets: [{ data: sessData, backgroundColor: '#00E5FF' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#A8B3CF' } }, x: { ticks: { color: '#A8B3CF' } } } }
+      });
+
+      // Grade stats
+      const grades = ['A+', 'A', 'B', 'C', 'D'];
+      const gradeContainer = document.getElementById('gradeStats');
+      gradeContainer.innerHTML = grades.map(g => {
+        const filtered = trades.filter(t => t.setupGrade === g);
+        const count = filtered.length;
+        const pnl = filtered.reduce((s, t) => s + getPnL(t), 0);
+        return `
+          <div class="kpi-card">
+            <div class="kpi-label">Setup ${g}</div>
+            <div class="kpi-value" style="font-size:1.1rem;">${count} trades</div>
+            <div style="font-size:0.8rem; color:${pnl>=0?'var(--profit)':'var(--loss)'};">${formatCurrency(pnl)}</div>
+          </div>
+        `;
+      }).join('');
+
+      // Psychology summary
+      const withEmotion = trades.filter(t => t.emotionBefore || t.emotionDuring || t.emotionAfter);
+      const psychContainer = document.getElementById('psychSummary');
+      if (withEmotion.length === 0) {
+        psychContainer.innerHTML = 'No psychology data logged yet. Add emotions when you record trades.';
+      } else {
+        const avgDiscipline = withEmotion.reduce((s, t) => s + (t.discipline || 7), 0) / withEmotion.length;
+        const emotions = withEmotion.map(t => t.emotionBefore).filter(Boolean);
+        const mostCommon = emotions.length ? emotions.sort((a,b) => emotions.filter(v => v === a).length - emotions.filter(v => v === b).length).pop() : 'N/A';
+        psychContainer.innerHTML = `
+          <div class="grid-2" style="margin-top:8px;">
+            <div><span class="text-muted">Trades with emotions:</span> <strong>${withEmotion.length}</strong></div>
+            <div><span class="text-muted">Avg Discipline:</span> <strong>${avgDiscipline.toFixed(1)}/10</strong></div>
+            <div style="grid-column: 1 / -1;"><span class="text-muted">Most common emotion (Before):</span> <strong>${mostCommon}</strong></div>
+          </div>
+        `;
+      }
+    }
+
+    // ================================================================
+    // TRADE CRUD (with date/time fix)
+    // ================================================================
+    function openAddTrade() {
+      document.getElementById('editIndex').value = -1;
+      document.getElementById('tradeModalTitle').innerText = 'New Trade';
+      document.getElementById('tradeForm').reset();
+      // Set default date to now
+      const now = new Date();
+      const localDateTime = now.toISOString().slice(0, 16);
+      document.getElementById('tradeDate').value = localDateTime;
+      clearScreenshotPreviews();
+      document.getElementById('tradeDiscipline').value = 7;
+      openModal('tradeModal');
+    }
+
+    function editTrade(index) {
+      const trades = getTrades();
+      const t = trades[index];
+      document.getElementById('editIndex').value = index;
+      document.getElementById('tradeModalTitle').innerText = 'Edit Trade';
+      // Pre-fill date/time from stored value
+      document.getElementById('tradeDate').value = t.date || new Date().toISOString().slice(0, 16);
+      document.getElementById('assetClass').value = t.assetClass || 'forex';
+      document.getElementById('instrument').value = t.instrument || '';
+      document.getElementById('direction').value = t.direction || 'long';
+      document.getElementById('positionSize').value = t.positionSize || 1;
+      document.getElementById('entryPrice').value = t.entryPrice || '';
+      document.getElementById('exitPrice').value = t.exitPrice || '';
+      document.getElementById('stopLoss').value = t.stopLoss || '';
+      document.getElementById('takeProfit').value = t.takeProfit || '';
+      document.getElementById('riskPercent').value = t.riskPercent || 1;
+      document.getElementById('strategy').value = t.strategy || '';
+      document.getElementById('setup').value = t.setup || 'Liquidity Sweep';
+      document.getElementById('customSetup').value = t.customSetup || '';
+      document.getElementById('setupGrade').value = t.setupGrade || 'A';
+      document.getElementById('executionGrade').value = t.executionGrade || 'A';
+      document.getElementById('planCompliance').value = t.planCompliance || 'Yes';
+      const violations = t.ruleViolations || [];
+      Array.from(document.getElementById('ruleViolations').options).forEach(o => { o.selected = violations.includes(o.value); });
+      document.getElementById('session').value = t.session || 'London';
+      document.getElementById('tags').value = t.tags || '';
+      document.getElementById('notes').value = t.notes || '';
+      document.getElementById('manualPnL').value = t.manualPnL || '';
+      document.getElementById('emotionBefore').value = t.emotionBefore || '';
+      document.getElementById('emotionDuring').value = t.emotionDuring || '';
+      document.getElementById('emotionAfter').value = t.emotionAfter || '';
+      document.getElementById('tradeDiscipline').value = t.discipline || 7;
+      clearScreenshotPreviews();
+      if (t.screenshots) {
+        if (t.screenshots.before) setScreenshotPreview('before', t.screenshots.before);
+        if (t.screenshots.during) setScreenshotPreview('during', t.screenshots.during);
+        if (t.screenshots.after) setScreenshotPreview('after', t.screenshots.after);
+      }
+      openModal('tradeModal');
+    }
+
+    function deleteTrade(index) {
+      if (!confirm('Delete this trade?')) return;
+      const trades = getTrades();
+      trades.splice(index, 1);
+      setTrades(trades);
+      renderAll();
+    }
+
+    function duplicateTrade(index) {
+      const trades = getTrades();
+      const copy = JSON.parse(JSON.stringify(trades[index]));
+      copy.date = new Date().toISOString().slice(0, 16); // set to now
+      trades.push(copy);
+      setTrades(trades);
+      renderAll();
+    }
+
+    function saveTrade(e) {
+      e.preventDefault();
+      const index = parseInt(document.getElementById('editIndex').value);
+      const trades = getTrades();
+      const manualPnLVal = parseFloat(document.getElementById('manualPnL').value);
+      const trade = {
+        date: document.getElementById('tradeDate').value, // now uses user-selected date/time
+        assetClass: document.getElementById('assetClass').value,
+        instrument: document.getElementById('instrument').value,
+        direction: document.getElementById('direction').value,
+        positionSize: parseFloat(document.getElementById('positionSize').value) || 1,
+        entryPrice: parseFloat(document.getElementById('entryPrice').value),
+        exitPrice: parseFloat(document.getElementById('exitPrice').value),
+        stopLoss: parseFloat(document.getElementById('stopLoss').value) || 0,
+        takeProfit: parseFloat(document.getElementById('takeProfit').value) || 0,
+        riskPercent: parseFloat(document.getElementById('riskPercent').value) || 1,
+        strategy: document.getElementById('strategy').value,
+        setup: document.getElementById('setup').value,
+        customSetup: document.getElementById('customSetup').value,
+        setupGrade: document.getElementById('setupGrade').value,
+        executionGrade: document.getElementById('executionGrade').value,
+        planCompliance: document.getElementById('planCompliance').value,
+        ruleViolations: Array.from(document.getElementById('ruleViolations').selectedOptions).map(o => o.value),
+        session: document.getElementById('session').value,
+        tags: document.getElementById('tags').value,
+        notes: document.getElementById('notes').value,
+        manualPnL: isNaN(manualPnLVal) ? null : manualPnLVal,
+        screenshots: getCurrentScreenshots(),
+        emotionBefore: document.getElementById('emotionBefore').value,
+        emotionDuring: document.getElementById('emotionDuring').value,
+        emotionAfter: document.getElementById('emotionAfter').value,
+        discipline: parseInt(document.getElementById('tradeDiscipline').value) || 7,
+      };
+      if (index === -1) trades.push(trade);
+      else trades[index] = { ...trades[index], ...trade, date: trade.date };
+      setTrades(trades);
+      closeModal('tradeModal');
+      renderAll();
+    }
+
+    // ================================================================
+    // SCREENSHOTS
+    // ================================================================
+    let screenshotData = { before: null, during: null, after: null };
+
+    function previewScreenshot(type, input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) { const dataUrl = e.target.result; screenshotData[type] = dataUrl; setScreenshotPreview(type, dataUrl); };
+      reader.readAsDataURL(file);
+    }
+
+    function setScreenshotPreview(type, dataUrl) {
+      const cap = type.charAt(0).toUpperCase() + type.slice(1);
+      const img = document.getElementById(`screenshot${cap}Preview`);
+      const removeBtn = document.getElementById(`screenshot${cap}Remove`);
+      img.src = dataUrl;
+      img.style.display = 'block';
+      removeBtn.style.display = 'block';
+      const box = document.getElementById(`screenshot${cap}Box`);
+      box.querySelector('span').style.display = 'none';
+    }
+
+    function removeScreenshot(type) {
+      screenshotData[type] = null;
+      const cap = type.charAt(0).toUpperCase() + type.slice(1);
+      const img = document.getElementById(`screenshot${cap}Preview`);
+      const removeBtn = document.getElementById(`screenshot${cap}Remove`);
+      img.style.display = 'none';
+      removeBtn.style.display = 'none';
+      const box = document.getElementById(`screenshot${cap}Box`);
+      box.querySelector('span').style.display = 'block';
+      const input = document.getElementById(`screenshot${cap}Input`);
+      input.value = '';
+    }
+
+    function clearScreenshotPreviews() {
+      ['before', 'during', 'after'].forEach(type => removeScreenshot(type));
+      screenshotData = { before: null, during: null, after: null };
+    }
+
+    function getCurrentScreenshots() {
+      return { before: screenshotData.before, during: screenshotData.during, after: screenshotData.after };
+    }
+
+    // ================================================================
+    // PROFILE PICTURE
+    // ================================================================
+    let _profilePicData = null;
+
+    function previewProfilePic(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      if (file.size > 200 * 1024) { alert('Image too large. Max 200KB.'); return; }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        _profilePicData = e.target.result;
+        document.getElementById('profilePicPreview').innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;" />`;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // ================================================================
+    // PSYCHOLOGY JOURNAL
+    // ================================================================
+    function openPsychology() { openModal('psychologyModal'); renderPsychologyEntries(); }
+
+    function renderPsychologyEntries() {
+      const entries = getPsychology();
+      const container = document.getElementById('psychologyEntries');
+      if (!entries.length) { container.innerHTML = '<div class="text-muted">No daily entries yet.</div>'; return; }
+      container.innerHTML = entries.slice().reverse().map(e => `
+        <div class="trade-item" style="border-left-color:var(--electric);">
+          <div class="trade-info">
+            <div class="meta">${formatDate(e.date)}</div>
+            <div class="meta">Mood: ${e.mood}/10 · Confidence: ${e.confidence}/10 · Discipline: ${e.discipline}/10</div>
+            <div class="meta">Focus: ${e.focus}/10 · Patience: ${e.patience}/10</div>
+            ${e.notes ? `<div class="meta" style="color:var(--text-secondary);">${e.notes}</div>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function savePsychology(e) {
+      e.preventDefault();
+      const entry = {
+        date: new Date().toISOString(),
+        mood: parseInt(document.getElementById('mood').value),
+        confidence: parseInt(document.getElementById('confidence').value),
+        discipline: parseInt(document.getElementById('disciplinePsych').value),
+        focus: parseInt(document.getElementById('focus').value),
+        patience: parseInt(document.getElementById('patience').value),
+        notes: document.getElementById('psychNotes').value,
+      };
+      const entries = getPsychology();
+      entries.push(entry);
+      setPsychology(entries);
+      renderPsychologyEntries();
+      document.getElementById('psychologyForm').reset();
+      alert('Psychology entry saved.');
+    }
+
+    // ================================================================
+    // GOALS
+    // ================================================================
+    function openGoals() {
+      openModal('goalsModal');
+      const goals = getGoals();
+      document.getElementById('goalProfit').value = goals.profitGoal || '';
+      document.getElementById('goalR').value = goals.rGoal || '';
+      document.getElementById('goalDrawdown').value = goals.drawdown || '';
+      document.getElementById('goalDailyLoss').value = goals.dailyLoss || '';
+      document.getElementById('goalFrequency').value = goals.frequency || '';
+    }
+
+    function saveGoals(e) {
+      e.preventDefault();
+      const goals = {
+        profitGoal: parseFloat(document.getElementById('goalProfit').value) || 0,
+        rGoal: parseFloat(document.getElementById('goalR').value) || 0,
+        drawdown: parseFloat(document.getElementById('goalDrawdown').value) || 0,
+        dailyLoss: parseFloat(document.getElementById('goalDailyLoss').value) || 0,
+        frequency: parseFloat(document.getElementById('goalFrequency').value) || 0,
+      };
+      setGoals(goals);
+      renderGoalsProgress();
+      alert('Goals saved.');
+    }
+
+    // ================================================================
+    // PROFILE
+    // ================================================================
+    function openProfile() {
+      openModal('profileModal');
+      const p = getProfile();
+      document.getElementById('profileName').value = p.name || '';
+      document.getElementById('profileUsername').value = p.username || '';
+      document.getElementById('profileEmail').value = p.email || '';
+      document.getElementById('profileExperience').value = p.experience || 'Intermediate';
+      document.getElementById('profileTimezone').value = p.timezone || '';
+      document.getElementById('profileCurrency').value = p.currency || 'USD';
+      document.getElementById('profileMarket').value = p.market || '';
+      document.getElementById('profileDefaultRisk').value = p.defaultRisk || 1.0;
+      document.getElementById('profileBalance').value = p.balance || '';
+      if (p.picture) {
+        document.getElementById('profilePicPreview').innerHTML = `<img src="${p.picture}" style="width:100%; height:100%; object-fit:cover;" />`;
+        _profilePicData = p.picture;
+      } else {
+        document.getElementById('profilePicPreview').innerHTML = '👤';
+        _profilePicData = null;
+      }
+    }
+
+    function saveProfile(e) {
+      e.preventDefault();
+      const profile = {
+        name: document.getElementById('profileName').value,
+        username: document.getElementById('profileUsername').value,
+        email: document.getElementById('profileEmail').value,
+        experience: document.getElementById('profileExperience').value,
+        timezone: document.getElementById('profileTimezone').value,
+        currency: document.getElementById('profileCurrency').value,
+        market: document.getElementById('profileMarket').value,
+        defaultRisk: parseFloat(document.getElementById('profileDefaultRisk').value) || 1.0,
+        balance: parseFloat(document.getElementById('profileBalance').value) || 0,
+        picture: _profilePicData || (getProfile().picture || null),
+      };
+      setProfile(profile);
+      renderAll();
+      closeModal('profileModal');
+      alert('Profile saved.');
+    }
+
+    // ================================================================
+    // EXPORT / IMPORT
+    // ================================================================
+    function exportData() {
+      const data = { version: '1.0', trades: getTrades(), profile: getProfile(), goals: getGoals(), psychology: getPsychology(), exportedAt: new Date().toISOString() };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `skynet_backup_${today()}.json`;
+      a.click();
+    }
+
+    function importData() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          try {
+            const data = JSON.parse(ev.target.result);
+            if (data.trades) setTrades(data.trades);
+            if (data.profile) setProfile(data.profile);
+            if (data.goals) setGoals(data.goals);
+            if (data.psychology) setPsychology(data.psychology);
+            alert('Data imported successfully.');
+            renderAll();
+          } catch (err) { alert('Invalid file format.'); }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    // ================================================================
+    // SETTINGS
+    // ================================================================
+    function openSettings() { openModal('settingsModal'); }
+
+    // ================================================================
+    // MODAL UTILITIES
+    // ================================================================
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    // ================================================================
+    // NAVIGATION
+    // ================================================================
+    function switchPage(page) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-' + page).classList.add('active');
+      document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
+      document.querySelector(`.bottom-nav button[data-page="${page}"]`).classList.add('active');
+      if (page === 'analytics') renderAnalytics();
+      if (page === 'calendar') renderCalendar();
+      if (page === 'trades') renderTradeList();
+      if (page === 'dashboard') renderDashboard();
+    }
+
+    document.querySelectorAll('.bottom-nav button').forEach(btn => {
+      btn.addEventListener('click', function() { switchPage(this.dataset.page); });
+    });
+
+    // ================================================================
+    // RENDER ALL
+    // ================================================================
+    function renderAll() {
+      renderDashboard();
+      renderTradeList();
+      renderCalendar();
+      renderAnalytics();
+    }
+
+    // ================================================================
+    // INIT
+    // ================================================================
+    renderAll();
+
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
+    });
+  </script>
+</body>
+</html>
