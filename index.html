@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-  <title>Sky-Net Tek · TradePro-v3.1</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" /> <title>Sky-Net Tek · TradePro-v3.1</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&family=JetBrains+Mono&family=Sora:wght@400;600;700&display=swap" rel="stylesheet" />
@@ -31,10 +30,22 @@
       --radius: 16px;
       --shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
     }
+    body.light-theme {
+  --bg: #F4F6FB;
+  --navy: #FFFFFF;
+  --card: #FFFFFF;
+  --border: #DDE1ED;
+  --text: #0B1120;
+  --text-secondary: #2E3A59;
+  --text-muted: #6B7A99;
+  --shadow: 0 8px 24px rgba(0,0,0,0.08);
+  --surface: #F0F2F8;
+}
     body {
       font-family: 'Inter', sans-serif;
       background: var(--bg);
       color: var(--text);
+      transition: background 0.3s, color 0.3s;
       min-height: 100vh;
       padding-bottom: 80px;
     }
@@ -393,6 +404,71 @@
       .logo-header .logo-name { font-size: 0.95rem; }
       .logo-header .logo-tagline { font-size: 0.5rem; }
     }
+    /* ===== THEME TOGGLE SWITCH ===== */
+.theme-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+  margin: 0 4px;
+}
+.theme-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--navy);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  transition: 0.3s;
+}
+.slider:before {
+  position: absolute;
+  content: "☀️";
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  width: 20px;
+  left: 2px;
+  bottom: 1px;
+  background-color: transparent;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+input:checked + .slider {
+  background-color: var(--electric);
+}
+input:checked + .slider:before {
+  transform: translateX(22px);
+  content: "🌙";
+}
+  /* ===== LOGO & THUNDER ICON FIX ===== */
+.logo-name {
+  white-space: nowrap;               /* keeps “Sky‑Net Tek” on one line */
+}
+.logo-header {
+  align-items: center;               /* vertically centres image/fallback and text */
+}
+.logo-fallback {
+  font-size: 1.4rem;                 /* make the ⚡ icon a bit larger */
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--electric);            /* optional: give it the electric blue colour */
+}
+/* make the fallback icon sit correctly beside the text */
+.logo-header .logo-fallback {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;                      /* same height as the logo image */
+}
   </style>
 </head>
 <body>
@@ -406,8 +482,8 @@
           <div class="logo-header">
             <img src="1000328755.jpg" alt="SKY-NETT Logo" class="logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
             <span class="logo-fallback" style="display:none;">⚡</span>
-            <div class="logo-text">
-              <span class="logo-name">Sky-Net Tek</span>
+<div class="logo-text">
+<span class="logo-name">Sky-Net Tek</span>
               <span class="logo-tagline">TradePro-v3.1</span>
             </div>
           </div>
@@ -416,7 +492,11 @@
             <div style="display:flex; align-items:center; gap:8px; margin-top:4px; justify-content:flex-end;">
               <div class="avatar" id="headerProfilePic" onclick="openProfile()" style="cursor:pointer;">👤</div>
               <span id="headerProfileName" class="text-secondary" style="font-size:0.85rem; font-weight:500; white-space:nowrap;"></span>
-              <button class="btn btn-sm" onclick="openAddTrade()">+</button>
+         <label class="theme-switch">
+  <input type="checkbox" id="themeToggleCheckbox" onchange="toggleTheme()" />
+  <span class="slider"></span>
+</label>     
+           <button class="btn btn-sm" onclick="openAddTrade()">+</button>
             </div>
           </div>
         </div>
@@ -762,7 +842,31 @@
     </div>
   </div>
 
-  <script>
+  <script>// ========== THEME TOGGLE ==========
+function applyTheme() {
+    const theme = localStorage.getItem('skynet_theme') || 'dark';
+    if (theme === 'light') {
+        document.body.classList.add('light-theme');
+    } else {
+        document.body.classList.remove('light-theme');
+    }
+    // Sync the toggle switch position
+    const toggleCheckbox = document.getElementById('themeToggleCheckbox');
+    if (toggleCheckbox) {
+        toggleCheckbox.checked = (theme === 'light');
+    }
+}
+
+function toggleTheme() {
+    const isLight = document.body.classList.contains('light-theme');
+    if (isLight) {
+        document.body.classList.remove('light-theme');
+        localStorage.setItem('skynet_theme', 'dark');
+    } else {
+        document.body.classList.add('light-theme');
+        localStorage.setItem('skynet_theme', 'light');
+    }
+}
     // ================================================================
     // DATA LAYER
     // ================================================================
@@ -1572,7 +1676,7 @@ function renderEdgePage() {
   updateCoachPage();   // ← ADD THIS LINE
   renderEdgePage();
   }
-
+    applyTheme();
     renderAll();
     document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); }));
   </script>
