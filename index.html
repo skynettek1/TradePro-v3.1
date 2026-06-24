@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-  <title>Sky-Net Tek · TradePro-v2.0</title>
+  <title>Sky-Net Tek · TradePro-v3.1</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&family=JetBrains+Mono&family=Sora:wght@400;600;700&display=swap" rel="stylesheet" />
@@ -408,7 +408,7 @@
             <span class="logo-fallback" style="display:none;">⚡</span>
             <div class="logo-text">
               <span class="logo-name">Sky-Net Tek</span>
-              <span class="logo-tagline">TradePro-v2.0</span>
+              <span class="logo-tagline">TradePro-v3.1</span>
             </div>
           </div>
           <div style="text-align:right;">
@@ -561,7 +561,34 @@
     </div>
   </div>
 </div>
+    <!-- EDGE DISCOVERY PAGE -->
+<div class="page" id="page-edge">
+  <div class="container">
+    <h1 class="mb-16">🔍 Edge Discovery Engine</h1>
 
+    <!-- Bubble Chart Card -->
+    <div class="card">
+      <div class="card-title">Edge Landscape (Bubble Chart)</div>
+      <div class="chart-wrapper" style="height:260px;">
+        <canvas id="edgeBubbleChart"></canvas>
+      </div>
+      <div class="text-muted" style="font-size:0.65rem; margin-top:6px;">
+        Bubble size = number of trades · Color = edge strength (green = strong/good, yellow = promising, red = unproven)
+      </div>
+    </div>
+
+    <!-- Detailed Edge List -->
+    <div class="card">
+      <div class="card-title">Verified Edges (≥30 trades with statistical confidence)</div>
+      <div id="topEdges" class="text-secondary" style="font-size:0.9rem; line-height:1.6;"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Emerging & Weak Edges (10–29 trades or unproven)</div>
+      <div id="weakEdges" class="text-secondary" style="font-size:0.9rem; line-height:1.6;"></div>
+    </div>
+  </div>
+</div>
+   
     <!-- BOTTOM NAV -->
     <nav class="bottom-nav">
   <button class="active" data-page="dashboard"><span class="nav-icon">🏠</span> Dashboard</button>
@@ -569,7 +596,8 @@
   <button data-page="calendar"><span class="nav-icon">📅</span> Calendar</button>
   <button data-page="analytics"><span class="nav-icon">📊</span> Analytics</button>
   <button data-page="coach"><span class="nav-icon">🧠</span> Coach</button>
-</nav>
+  <button data-page="edge"><span class="nav-icon">🔎</span> Edge</button>
+ </nav>
 
     <!-- ========== MODALS ========== -->
 
@@ -1230,7 +1258,193 @@ function updateCoachPage() {
    function openSettings() { openModal('settingsModal'); }
     function openModal(id) { document.getElementById(id).classList.add('active'); }
     function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+// ========== EDGE DISCOVERY ENGINE (with bubble chart) ==========
 
+function binomialConfidence(wins, total) {
+    if (total === 0) return { lower: 0, upper: 0 };
+    const p = wins / total;
+    const z = 1.96;
+    const delta = z * Math.sqrt((p * (1 - p)) / total);
+    return {
+        lower: Math.max(0, p - delta),
+        upper: Math.min(1, p + delta)
+    };
+}
+
+function edgeQuality(wins, total, avgR) {
+    if (total < 10) return { label: '🔴 Insufficient Data', class: 'badge badge-loss' };
+    const ci = binomialConfidence(wins, total);
+    const isConfident = ci.lower > 0.5;
+    const hasPositiveR = avgR > 0.5;
+
+    if (total >= 100) {
+        if (isConfident && hasPositiveR) return { label: '🟢 Strong Edge', class: 'badge badge-profit' };
+        if (isConfident) return { label: '🟡 Potential Edge', class: 'badge badge-profit' };
+        if (hasPositiveR) return { label: '🟡 High R, Check WR', class: 'badge' };
+        return { label: '🟡 Needs More Data', class: 'badge' };
+    }
+    if (total >= 30) {
+        if (isConfident && hasPositiveR) return { label: '🔵 Good Edge', class: 'badge badge-profit' };
+        if (isConfident) return { label: '🔵 Promising', class: 'badge' };
+        if (hasPositiveR) return { label: '🔵 Needs More Data', class: 'badge' };
+        return { label: '🔵 Uncertain', class: 'badge' };
+    }
+    // 10-29 trades
+    if (isConfident && hasPositiveR) return { label: '⚪ Emerging', class: 'badge' };
+    return { label: '⚪ Early Stage', class: 'badge' };
+}
+
+function discoverEdges() {
+    const trades = getTrades();
+    const edges = [];
+    if (trades.length === 0) return edges;
+
+    const dimensions = ['instrument', 'session', 'setup', 'setupGrade', 'emotionBefore'];
+
+    dimensions.forEach(dim => {
+        const groups = {};
+        trades.forEach(t => {
+            let value = t[dim];
+            if (!value || value === '') value = 'Unknown';
+            if (!groups[value]) groups[value] = [];
+            groups[value].push(t);
+        });
+
+        Object.entries(groups).forEach(([value, group]) => {
+            if (group.length < 2) return;
+            const stats = calculateStats(group);
+            const avgR = group.reduce((s, t) => s + getR(t), 0) / group.length;
+            const ci = binomialConfidence(stats.wins, group.length);
+            const quality = edgeQuality(stats.wins, group.length, avgR);
+
+            edges.push({
+                dimension: dim,
+                value: value,
+                count: group.length,
+                wins: stats.wins,
+                winRate: stats.winRate,
+                avgR: avgR,
+                totalPnL: stats.totalPnL,
+                confidenceLow: (ci.lower * 100).toFixed(1),
+                confidenceHigh: (ci.upper * 100).toFixed(1),
+                qualityLabel: quality.label,
+                qualityClass: quality.class
+            });
+        });
+    });
+
+    return edges;
+}
+
+let edgeBubbleChart = null;
+
+function renderEdgePage() {
+    const allEdges = discoverEdges();
+    const container = document.getElementById('topEdges');
+    const weakContainer = document.getElementById('weakEdges');
+
+    if (allEdges.length === 0) {
+        container.innerHTML = '<span class="text-muted">Not enough data yet. Log more trades to see your edges.</span>';
+        weakContainer.innerHTML = '';
+        if (edgeBubbleChart) edgeBubbleChart.destroy();
+        return;
+    }
+
+    const top = [...allEdges].sort((a, b) => b.avgR - a.avgR).slice(0, 15);
+    const weak = [...allEdges].sort((a, b) => a.winRate - b.winRate).slice(0, 10);
+
+    container.innerHTML = top.length ? top.map(e => `
+        <div class="trade-item" style="border-left-color: ${e.qualityClass.includes('profit') ? 'var(--profit)' : 'var(--electric)'}; margin-bottom:8px;">
+          <div class="trade-info">
+            <div class="flex-between mb-8">
+              <div class="pair">${e.dimension.charAt(0).toUpperCase() + e.dimension.slice(1)}: <strong>${e.value}</strong></div>
+              <span class="badge ${e.qualityClass}">${e.qualityLabel}</span>
+            </div>
+            <div class="meta">${e.count} trades · Win ${e.winRate.toFixed(1)}% · Avg ${e.avgR.toFixed(2)}R · P&L ${formatCurrency(e.totalPnL)}</div>
+            <div class="meta" style="color: var(--text-muted); font-size:0.7rem;">95% CI: ${e.confidenceLow}% – ${e.confidenceHigh}%</div>
+          </div>
+        </div>
+    `).join('') : '<span class="text-muted">No verified edges yet.</span>';
+
+    weakContainer.innerHTML = weak.length ? weak.map(e => `
+        <div class="trade-item" style="border-left-color: var(--loss); margin-bottom:8px;">
+          <div class="trade-info">
+            <div class="flex-between mb-8">
+              <div class="pair">${e.dimension.charAt(0).toUpperCase() + e.dimension.slice(1)}: <strong>${e.value}</strong></div>
+              <span class="badge badge-loss">⚠️ Weak</span>
+            </div>
+            <div class="meta">${e.count} trades · Win ${e.winRate.toFixed(1)}% · Avg ${e.avgR.toFixed(2)}R · P&L ${formatCurrency(e.totalPnL)}</div>
+          </div>
+        </div>
+    `).join('') : '';
+
+    // Bubble chart
+    const ctx = document.getElementById('edgeBubbleChart').getContext('2d');
+    if (edgeBubbleChart) edgeBubbleChart.destroy();
+
+    const chartData = allEdges.map(e => ({
+        x: e.winRate,
+        y: e.avgR,
+        r: Math.min(25, Math.max(5, e.count / 2)),
+        label: `${e.dimension}: ${e.value}`,
+        count: e.count,
+        qualityClass: e.qualityClass
+    }));
+
+    const colors = chartData.map(d => {
+        if (d.qualityClass.includes('profit')) return 'rgba(0, 210, 106, 0.8)';
+        if (d.qualityClass.includes('loss')) return 'rgba(255, 77, 79, 0.8)';
+        if (d.qualityClass.includes('badge')) return 'rgba(0, 168, 255, 0.7)';
+        return 'rgba(255, 169, 64, 0.7)';
+    });
+
+    edgeBubbleChart = new Chart(ctx, {
+        type: 'bubble',
+        data: {
+            datasets: [{
+                label: 'Edges',
+                data: chartData,
+                backgroundColor: colors,
+                borderColor: colors.map(c => c.replace('0.8', '1').replace('0.7', '1')),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => {
+                            const d = context.raw;
+                            return [
+                                `${d.label}`,
+                                `Win Rate: ${d.x.toFixed(1)}%`,
+                                `Avg R: ${d.y.toFixed(2)}`,
+                                `Trades: ${d.count}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Win Rate (%)', color: 'var(--text-muted)' },
+                    min: 0,
+                    max: 100,
+                    ticks: { callback: v => v + '%', color: 'var(--text-muted)' },
+                    grid: { color: 'rgba(255,255,255,0.05)' }
+                },
+                y: {
+                    title: { display: true, text: 'Average R', color: 'var(--text-muted)' },
+                    ticks: { color: 'var(--text-muted)' },
+                    grid: { color: 'rgba(255,255,255,0.05)' }
+                }
+            }
+        }
+    });
+}
     function switchPage(page) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.getElementById('page-' + page).classList.add('active');
@@ -1241,6 +1455,7 @@ function updateCoachPage() {
       if (page === 'trades') renderTradeList();
       if (page === 'dashboard') renderDashboard();
     if (page === 'coach') updateCoachPage();
+    if (page === 'edge') renderEdgePage();
     }
     document.querySelectorAll('.bottom-nav button').forEach(btn => btn.addEventListener('click', function() { switchPage(this.dataset.page); }));
 
@@ -1250,7 +1465,8 @@ function updateCoachPage() {
   renderCalendar();
   renderAnalytics();
   updateCoachPage();   // ← ADD THIS LINE
-}
+  renderEdgePage();
+  }
 
     renderAll();
     document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); }));
