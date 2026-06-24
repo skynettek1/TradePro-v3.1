@@ -511,29 +511,65 @@
       </div>
     </div>
 
-    <!-- MORE PAGE -->
-    <div class="page" id="page-more">
-      <div class="container">
-        <h1 class="mb-16">More</h1>
-        <div class="card">
-          <button class="btn btn-block" onclick="openPsychology()">🧠 Psychology Journal</button>
-          <button class="btn btn-block mt-12" onclick="openGoals()">🎯 Goals</button>
-          <button class="btn btn-block mt-12" onclick="openProfile()">👤 Profile</button>
-          <button class="btn btn-block mt-12" onclick="openSettings()">⚙ Settings</button>
-          <button class="btn btn-block mt-12" onclick="exportData()">📥 Export Data</button>
-          <button class="btn btn-block mt-12" onclick="importData()">📤 Import Data</button>
-        </div>
+    <!-- COACH PAGE -->
+<div class="page" id="page-coach">
+  <div class="container">
+    <h1 class="mb-16">🧠 Performance Coach</h1>
+
+    <!-- Trader Rating & Scores -->
+    <div class="card">
+      <div class="card-title">Trader Rating</div>
+      <div style="display:flex; align-items:center; gap:16px;">
+        <div style="font-size:3rem; font-weight:700; font-family:'Sora', sans-serif;" id="traderRating">0</div>
+        <div style="font-size:1.2rem; color:var(--text-secondary);">/100</div>
+      </div>
+      <div class="grid-2" style="margin-top:12px;">
+        <div class="kpi-card"><div class="kpi-label">Discipline</div><div class="kpi-value" id="discScore">0</div></div>
+        <div class="kpi-card"><div class="kpi-label">Risk</div><div class="kpi-value" id="riskScore">0</div></div>
+        <div class="kpi-card"><div class="kpi-label">Execution</div><div class="kpi-value" id="execScore">0</div></div>
+        <div class="kpi-card"><div class="kpi-label">Psychology</div><div class="kpi-value" id="psychScore">0</div></div>
+        <div class="kpi-card"><div class="kpi-label">Strategy</div><div class="kpi-value" id="stratScore">0</div></div>
       </div>
     </div>
 
+    <!-- Weekly Review -->
+    <div class="card">
+      <div class="card-title">Weekly Review (last 7 days)</div>
+      <div id="weeklyReview" class="text-secondary" style="font-size:0.9rem; line-height:1.5;"></div>
+    </div>
+
+    <!-- Monthly Review -->
+    <div class="card">
+      <div class="card-title">Monthly Review</div>
+      <div id="monthlyReview" class="text-secondary" style="font-size:0.9rem; line-height:1.5;"></div>
+    </div>
+
+    <!-- Performance Insights -->
+    <div class="card">
+      <div class="card-title">Performance Insights</div>
+      <div id="coachInsights" class="text-secondary" style="font-size:0.9rem; line-height:1.6;"></div>
+    </div>
+
+    <!-- Quick access buttons -->
+    <div class="card">
+      <button class="btn btn-block" onclick="openPsychology()">🧠 Psychology Journal</button>
+      <button class="btn btn-block mt-12" onclick="openGoals()">🎯 Goals</button>
+      <button class="btn btn-block mt-12" onclick="openProfile()">👤 Profile</button>
+      <button class="btn btn-block mt-12" onclick="openSettings()">⚙ Settings</button>
+      <button class="btn btn-block mt-12" onclick="exportData()">📥 Export Data</button>
+      <button class="btn btn-block mt-12" onclick="importData()">📤 Import Data</button>
+    </div>
+  </div>
+</div>
+
     <!-- BOTTOM NAV -->
     <nav class="bottom-nav">
-      <button class="active" data-page="dashboard"><span class="nav-icon">🏠</span> Dashboard</button>
-      <button data-page="trades"><span class="nav-icon">📒</span> Trades</button>
-      <button data-page="calendar"><span class="nav-icon">📅</span> Calendar</button>
-      <button data-page="analytics"><span class="nav-icon">📊</span> Analytics</button>
-      <button data-page="more"><span class="nav-icon">⚙</span> More</button>
-    </nav>
+  <button class="active" data-page="dashboard"><span class="nav-icon">🏠</span> Dashboard</button>
+  <button data-page="trades"><span class="nav-icon">📒</span> Trades</button>
+  <button data-page="calendar"><span class="nav-icon">📅</span> Calendar</button>
+  <button data-page="analytics"><span class="nav-icon">📊</span> Analytics</button>
+  <button data-page="coach"><span class="nav-icon">🧠</span> Coach</button>
+</nav>
 
     <!-- ========== MODALS ========== -->
 
@@ -1076,7 +1112,122 @@
     function exportData() { const data = { version:'1.0', trades:getTrades(), profile:getProfile(), goals:getGoals(), psychology:getPsychology(), exportedAt: new Date().toISOString() }; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})); a.download=`skynet_backup_${today()}.json`; a.click(); }
     function importData() { const input=document.createElement('input'); input.type='file'; input.accept='.json'; input.onchange=function(e){ const file=e.target.files[0]; if(!file)return; const reader=new FileReader(); reader.onload=function(ev){ try{ const data=JSON.parse(ev.target.result); if(data.trades) setTrades(data.trades); if(data.profile) setProfile(data.profile); if(data.goals) setGoals(data.goals); if(data.psychology) setPsychology(data.psychology); alert('Data imported.'); renderAll(); }catch(err){ alert('Invalid file format.'); } }; reader.readAsText(file); }; input.click(); }
 
-    function openSettings() { openModal('settingsModal'); }
+  // ========== COACH LOGIC ==========
+function computeCoachScores() {
+    const trades = getTrades();
+    if (!trades.length) return { discipline: 50, risk: 50, execution: 50, psychology: 50, strategy: 50, overall: 50 };
+
+    const totalTrades = trades.length;
+    const violations = trades.reduce((s, t) => s + (t.ruleViolations ? t.ruleViolations.length : 0), 0);
+    const disciplineScore = Math.max(0, Math.min(100, 100 - (violations / totalTrades) * 50));
+
+    const defaultRisk = getProfile().defaultRisk || 1;
+    const riskDeviations = trades.filter(t => t.riskPercent && Math.abs(t.riskPercent - defaultRisk) > 0.5).length;
+    const riskScore = Math.max(0, Math.min(100, 100 - (riskDeviations / totalTrades) * 30));
+
+    const gradeMap = { 'A+': 100, 'A': 90, 'B': 75, 'C': 60, 'D': 40 };
+    const execAvg = trades.reduce((s, t) => s + (gradeMap[t.executionGrade] || 75), 0) / totalTrades;
+    const executionScore = Math.round(execAvg);
+
+    const discAvg = trades.reduce((s, t) => s + (t.discipline || 7), 0) / totalTrades;
+    const psychologyScore = Math.min(100, Math.round(discAvg * 10));
+
+    const setupAvg = trades.reduce((s, t) => s + (gradeMap[t.setupGrade] || 75), 0) / totalTrades;
+    const strategyScore = Math.round(setupAvg);
+
+    const overall = Math.round((disciplineScore + riskScore + executionScore + psychologyScore + strategyScore) / 5);
+    return { discipline: disciplineScore, risk: riskScore, execution: executionScore, psychology: psychologyScore, strategy: strategyScore, overall };
+}
+
+function generateWeeklyReview() {
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const trades = getTrades().filter(t => new Date(t.date) >= weekAgo);
+    if (!trades.length) return 'No trades in the last 7 days.';
+    const stats = calculateStats(trades);
+    return `You took ${trades.length} trades with a win rate of ${stats.winRate.toFixed(1)}% and total P&L ${formatCurrency(stats.totalPnL)}.`;
+}
+
+function generateMonthlyReview() {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const trades = getTrades().filter(t => new Date(t.date) >= monthStart);
+    if (!trades.length) return 'No trades this month.';
+    const stats = calculateStats(trades);
+    return `This month: ${trades.length} trades, Win Rate ${stats.winRate.toFixed(1)}%, P&L ${formatCurrency(stats.totalPnL)}.`;
+}
+
+function generateCoachInsights() {
+    const trades = getTrades();
+    const insights = [];
+    if (!trades.length) {
+        insights.push('Log your first trade to get started.');
+        return insights;
+    }
+
+    // Session analysis
+    const sessions = {};
+    trades.forEach(t => {
+        const s = t.session || 'Other';
+        if (!sessions[s]) sessions[s] = [];
+        sessions[s].push(t);
+    });
+    let bestSession = null, worstSession = null, bestWinRate = 0, worstWinRate = 100;
+    for (const [session, sessTrades] of Object.entries(sessions)) {
+        if (sessTrades.length < 2) continue;
+        const stats = calculateStats(sessTrades);
+        if (stats.winRate > bestWinRate) { bestWinRate = stats.winRate; bestSession = session; }
+        if (stats.winRate < worstWinRate) { worstWinRate = stats.winRate; worstSession = session; }
+    }
+    if (bestSession) insights.push(`Your best session is ${bestSession} (${bestWinRate.toFixed(1)}% win rate).`);
+    if (worstSession) insights.push(`Your weakest session is ${worstSession} (${worstWinRate.toFixed(1)}% win rate).`);
+
+    // Setup analysis
+    const setups = {};
+    trades.forEach(t => {
+        const s = t.setup || 'Other';
+        if (!setups[s]) setups[s] = [];
+        setups[s].push(t);
+    });
+    let bestSetup = null, bestAvgR = 0;
+    for (const [setup, setupTrades] of Object.entries(setups)) {
+        const avgR = setupTrades.reduce((s, t) => s + getR(t), 0) / setupTrades.length;
+        if (avgR > bestAvgR) { bestAvgR = avgR; bestSetup = setup; }
+    }
+    if (bestSetup) insights.push(`Your best setup is "${bestSetup}" (${bestAvgR.toFixed(1)}R average).`);
+
+    // Violations
+    const violationTrades = trades.filter(t => t.planCompliance === 'No' || (t.ruleViolations && t.ruleViolations.length));
+    if (violationTrades.length) {
+        insights.push(`You exceeded your risk plan ${violationTrades.length} time(s) this month.`);
+    }
+
+    // Emotion pattern
+    const negativeEmotions = ['Anxious', 'Fearful'];
+    const negTrades = trades.filter(t => negativeEmotions.includes(t.emotionBefore));
+    if (negTrades.length && calculateStats(negTrades).winRate < 50) {
+        insights.push('Your win rate drops when you enter trades feeling anxious or fearful – work on mindset.');
+    }
+
+    if (!insights.length) insights.push('Keep up the solid performance!');
+    return insights;
+}
+
+function updateCoachPage() {
+    const scores = computeCoachScores();
+    document.getElementById('traderRating').innerText = scores.overall;
+    document.getElementById('discScore').innerText = scores.discipline;
+    document.getElementById('riskScore').innerText = scores.risk;
+    document.getElementById('execScore').innerText = scores.execution;
+    document.getElementById('psychScore').innerText = scores.psychology;
+    document.getElementById('stratScore').innerText = scores.strategy;
+
+    document.getElementById('weeklyReview').innerHTML = generateWeeklyReview();
+    document.getElementById('monthlyReview').innerHTML = generateMonthlyReview();
+    const insights = generateCoachInsights();
+    document.getElementById('coachInsights').innerHTML = insights.map(i => `• ${i}`).join('<br>');
+}
+   function openSettings() { openModal('settingsModal'); }
     function openModal(id) { document.getElementById(id).classList.add('active'); }
     function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
@@ -1089,10 +1240,17 @@
       if (page === 'calendar') renderCalendar();
       if (page === 'trades') renderTradeList();
       if (page === 'dashboard') renderDashboard();
+    if (page === 'coach') updateCoachPage();
     }
     document.querySelectorAll('.bottom-nav button').forEach(btn => btn.addEventListener('click', function() { switchPage(this.dataset.page); }));
 
-    function renderAll() { renderDashboard(); renderTradeList(); renderCalendar(); renderAnalytics(); }
+    function renderAll() {
+  renderDashboard();
+  renderTradeList();
+  renderCalendar();
+  renderAnalytics();
+  updateCoachPage();   // ← ADD THIS LINE
+}
 
     renderAll();
     document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); }));
